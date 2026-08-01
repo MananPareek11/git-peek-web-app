@@ -12,6 +12,7 @@ import RepoSort from '../components/repository/RepoSort';
 import RepoList from '../components/repository/RepoList';
 import Pagination from '../components/common/Pagination';
 import Button from '../components/common/Button';
+import ExportPdfButton from '../components/profile/ExportPdfButton';
 import { ProfileSkeleton, ReposGridSkeleton } from '../components/common/Loader';
 import ErrorState from '../components/common/ErrorState';
 import styles from './Profile.module.css';
@@ -113,13 +114,14 @@ export const Profile = () => {
 
   return (
     <Container className={`${styles.profileContainer} animate-fade-in`}>
-      {/* Top Header Row with back button */}
-      <div className={styles.backRow}>
+      {/* Top Header Row with back button & export PDF button */}
+      <div className={styles.backRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/">
           <Button variant="secondary" icon={FaArrowLeft} size="sm">
             Back to Search
           </Button>
         </Link>
+        <ExportPdfButton userData={userData} reposData={reposData} />
       </div>
 
       {/* Main Dashboard Layout Grid */}

@@ -1,83 +1,120 @@
 # API Endpoints Reference
 
-The GitPeek Express backend exposes an internal API for the React frontend to consume. This backend acts as a proxy to the official GitHub REST API and integrates with OpenRouter for AI features.
+The GitPeek Express backend exposes an API under `/api` for authentication, GitHub data proxying, caching, and analytics.
 
 Base URL (Local Development): `http://localhost:5000/api`
 
 ---
 
-## 1. Authentication
+## 1. Authentication Endpoints (`/api/auth`)
 
-**Endpoint:** `/auth/github`  
+### Register User
+Registers a new local user with email and password.
+
+**Endpoint:** `/api/auth/register`  
+**Method:** `POST`  
+**Body:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "secretpassword",
+  "githubUsername": "janedoe"
+}
+```
+
+---
+
+### Login User
+Authenticates an existing user and returns a Bearer JWT token.
+
+**Endpoint:** `/api/auth/login`  
+**Method:** `POST`  
+**Body:**
+```json
+{
+  "email": "jane@example.com",
+  "password": "secretpassword"
+}
+```
+
+---
+
+### GitHub OAuth URL
+Gets the authorization URL for GitHub OAuth.
+
+**Endpoint:** `/api/auth/github/url`  
+**Method:** `GET`
+
+---
+
+### GitHub OAuth Callback / Instant Connect
+Exchanges OAuth authorization code or username for an application JWT session token.
+
+**Endpoint:** `/api/auth/github/callback`  
+**Method:** `POST`  
+**Body:**
+```json
+{
+  "code": "oauth_code_from_github",
+  "githubUsername": "optional_instant_connect_username"
+}
+```
+
+---
+
+### Current User Profile
+Gets the profile of the currently authenticated user.
+
+**Endpoint:** `/api/auth/me`  
+**Method:** `GET`  
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### Link GitHub Account
+Links a GitHub username to the logged-in user account.
+
+**Endpoint:** `/api/auth/link-github`  
+**Method:** `POST`  
+**Headers:** `Authorization: Bearer <token>`  
+**Body:**
+```json
+{
+  "githubUsername": "octocat"
+}
+```
+
+---
+
+## 2. GitHub Profile & Repositories (`/api`)
+
+### Get User Profile & Repositories
+Fetches a user profile and public repositories from MongoDB cache (if fresh) or directly from GitHub API.
+
+**Endpoint:** `/api/github/:username`  
+**Method:** `GET`
+
+---
+
+### Force Refresh Profile
+Purges cached data and fetches live profile & repository data from GitHub.
+
+**Endpoint:** `/api/github/refresh/:username`  
 **Method:** `POST`
 
-Handles the OAuth 2.0 callback from GitHub and establishes an authenticated user session.
-
 ---
 
-## 2. Get User Profile
+### List Cached Users
+Retrieves a list of all cached user profiles.
 
-Fetches the core profile data for a specific GitHub user.
-
-**Endpoint:** `/users/:username`  
+**Endpoint:** `/api/users`  
 **Method:** `GET`
 
-### Path Parameters
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `username` | String | The exact GitHub handle of the user. |
-
 ---
 
-## 3. Get User Repositories
+### Get Search History
+Lists recent search queries.
 
-Fetches a list of public repositories owned by the specified GitHub user.
-
-**Endpoint:** `/users/:username/repos`  
+**Endpoint:** `/api/history`  
 **Method:** `GET`
-
-### Path Parameters
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `username` | String | The exact GitHub handle of the user. |
-
----
-
-## 4. Get Repository AI Summary
-
-Uses OpenRouter to parse a specific repository and return an AI-generated summary of the project.
-
-**Endpoint:** `/repos/:owner/:repo/summary`  
-**Method:** `GET`
-
-### Path Parameters
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `owner`    | String | The GitHub username of the repository owner. |
-| `repo`     | String | The name of the repository. |
-
----
-
-## 5. Compare Profiles
-
-Compares the currently authenticated user's metrics with a target user.
-
-**Endpoint:** `/profile/compare`  
-**Method:** `GET`
-
-### Query Parameters
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `target`  | String | The GitHub username to compare against. |
-
----
-
-## 6. Get AI Recommendations
-
-Generates mentorship insights and project recommendations based on a profile comparison.
-
-**Endpoint:** `/ai/recommendations`  
-**Method:** `POST`
-
-### Request Body
-Should contain the metrics of the authenticated user and the target profile to serve as context for the OpenRouter LLM.

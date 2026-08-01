@@ -1,23 +1,43 @@
 # Core Features
 
-GitPeek was built to provide a focused, high-performance experience for analyzing GitHub profiles. Here are the core features that drive the application.
+GitPeek is built to provide a focused, high-performance experience for analyzing GitHub profiles and developer metrics. Here are the core features powering the application:
 
-## 1. Rate-Limit Circumventing Architecture
-The primary challenge of using the GitHub REST API on the frontend is the strict unauthenticated rate limit (60 requests per hour per IP). GitPeek solves this by routing all requests through a custom Node.js backend proxy. By injecting a developer's Personal Access Token server-side, GitPeek safely elevates the API limit to 5,000 requests per hour without exposing credentials to the client browser.
+---
 
-## 2. GitHub Authentication & Profile Comparison
-Users can authenticate using standard OAuth with GitHub. Once authenticated, GitPeek provides a "Compare with Me" feature, allowing developers to view side-by-side metrics of their own profile versus any other GitHub user.
+## 1. Authentication System (GitHub OAuth & Normal Login)
+GitPeek supports full user authentication with two options:
+- **Email & Password Login**: Native user sign-up and sign-in backed by hashed passwords (`bcryptjs`) and JSON Web Tokens (`jsonwebtoken`).
+- **GitHub OAuth Login**: Standard OAuth 2.0 flow allowing users to log in directly with their GitHub account or link their GitHub profile.
 
-## 3. AI Mentorship and Recommendations
-Through integration with the OpenRouter API, GitPeek can ingest profile data from both the authenticated user and a target user to generate tailored mentorship insights. The AI engine recommends specific projects, programming languages, and architecture patterns to help the user grow their skillset to match their peers.
+---
 
-## 4. Repository Detail Views & PDF Exports
-Clicking into any repository brings the user to a dedicated detail route. Here, GitPeek utilizes AI to generate a detailed summary of the repository's codebase and purpose. Users can instantly export these comprehensive summaries as highly formatted PDF documents.
+## 2. GitHub Profile PDF Resume Generator
+Developers can generate and export a comprehensive, downloadable PDF summary of any GitHub profile with one click.
+- **Client-Side High Resolution Rendering**: Built with `jspdf` and `html2canvas` using dynamic code splitting so heavy PDF libraries load on-demand without slowing down page load speed.
+- **Included Report Data**:
+  - Bio metadata, avatar, join date, followers, and public repos count.
+  - Overall total stars and total forks across projects.
+  - Programming language distribution progress bars with exact percentages.
+  - Featured projects list detailing star counts, fork counts, and topics.
+
+---
+
+## 3. Rate-Limit Circumventing Architecture
+The primary challenge of using the GitHub REST API on the frontend is the strict unauthenticated rate limit (60 requests per hour per IP). GitPeek solves this by routing all requests through a custom Node.js backend proxy with optional Personal Access Tokens, elevating the limit to 5,000 requests per hour.
+
+---
+
+## 4. 24-Hour Automated Profile Caching
+User searches are cached in MongoDB for 24 hours. Subsequent queries for the same profile load instantly from cache while reducing unnecessary network requests to GitHub.
+
+---
 
 ## 5. Dynamic Repository Filtering and Sorting
-Because developers can have hundreds of repositories, GitPeek implements a client-side data processing layer.
-- **Sorting:** Users can dynamically re-order repositories based on Stars, Forks, Size, and Updated Date.
-- **Filtering:** Users can search repository names and descriptions in real-time, or filter the list down to specific programming languages.
+Client-side processing allows users to filter and sort repositories dynamically:
+- **Sorting**: Order by Recently Updated, Newest Created, Oldest Created, Stars Count, Forks Count, and Alphabetical (A-Z).
+- **Filtering**: Real-time text search by repository name/description and filter dropdown by programming language.
 
-## 6. Immersive Aesthetic
-Instead of the standard stark-white analytical tools, GitPeek uses a highly polished, Spotify-inspired UI. The interface prioritizes deep dark backgrounds, subtle drop shadows, pill-shaped geometries, and precise typography to make exploring data a visually enjoyable experience.
+---
+
+## 6. Spotify-Inspired Glassmorphic Aesthetic
+Deep dark backgrounds, vibrant accent colors (`#1ed760`), glassmorphic panels, custom-styled dropdown controls, and micro-animations deliver a premium developer experience.

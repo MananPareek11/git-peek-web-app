@@ -98,6 +98,11 @@ input, button, select, textarea {
   font-size: inherit;
 }
 
+select option {
+  background-color: #181818;
+  color: #ffffff;
+}
+
 /* Base Buttons */
 button {
   cursor: pointer;

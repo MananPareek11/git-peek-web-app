@@ -1,64 +1,75 @@
 # GitPeek
 
-GitPeek is a full-stack developer dashboard application for exploring GitHub profiles, statistics, and repositories. Built with React, Node.js, Express, and MongoDB, it implements a 24-hour cache synchronization layer to improve page load performance and bypass GitHub API rate limiting controls.
+GitPeek is a full-stack developer dashboard application for exploring GitHub profiles, statistics, and repositories. Built with React, Node.js, Express, and MongoDB, it implements a 24-hour cache synchronization layer to improve page load performance, bypass GitHub API rate limits, authenticate users (via GitHub OAuth or Email/Password), and export developer profile reports as formatted PDF resumes.
+
+---
 
 ## System Architecture
 
-The following diagram illustrates how the caching layer intercepts developer searches to optimize speed and API usage:
+The following diagram illustrates the workflow of GitPeek's core architecture, including API caching and authentication:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Client as Client App (React)
     participant Server as Backend API (Express)
-    participant DB as Cache DB (MongoDB)
+    participant DB as MongoDB Database
     participant GitHub as GitHub API
 
+    Note over Client,Server: User Authentication Flow
+    Client->>Server: POST /api/auth/login OR /api/auth/github/callback
+    Server->>DB: Verify credentials / Find or create AuthUser
+    DB-->>Server: Return user record
+    Server-->>Client: Issue JWT Token + User Session
+
+    Note over Client,GitHub: Developer Profile & PDF Generation
     Client->>Server: GET /api/github/:username
     Server->>DB: Query cached user profile
     alt Cache exists and is fresh (< 24 hours)
         DB-->>Server: Return cached profile & repositories
         Server-->>Client: Return data (Source: Cache)
     else Cache does not exist or is stale (> 24 hours)
-        Server->>GitHub: GET /users/:username
-        GitHub-->>Server: User Profile details
-        Server->>GitHub: GET /users/:username/repos (up to 100)
-        GitHub-->>Server: Repositories list
-        Server->>DB: Upsert profile & overwrite repositories
-        DB-->>Server: Success
+        Server->>GitHub: GET /users/:username & /repos
+        GitHub-->>Server: Profile & Repositories data
+        Server->>DB: Upsert profile & repositories
         Server-->>Client: Return fresh data (Source: GitHub)
     end
+    Client->>Client: One-click export PDF report (jspdf + html2canvas)
 ```
+
+---
 
 ## Key Features
 
+- **GitHub OAuth & Email/Password Authentication**: Secure authentication system supporting normal register/login via Email and Password (hashed with `bcryptjs` and secured with JWT tokens) as well as GitHub OAuth / instant GitHub profile linking.
+- **Developer PDF Resume Exporter**: Export high-resolution, formatted PDF summary reports for any developer profile, detailing bio metrics, repository counts, total stars/forks, programming language distribution progress bars, and top featured projects.
 - **Profile Search and Analytics**: Fetches comprehensive developer metadata, including biography, hireable flag, avatars, join dates, and follower metrics.
-- **Repository Directory**: Provides drill-down views of stars, forks, open issues, languages, default branches, and repository visibility.
+- **Repository Filtering & Sorting**: Client-side filtering by repository name/description, language classification, and sorting by Stars, Forks, Updated Date, or Alphabetical order.
 - **24-Hour Caching Engine**: Auto-expires database entries after 24 hours, automatically refreshing profiles on subsequent searches while preserving rate limits.
-- **Bookmarking and Favorites**: Allows users to save favorite profiles for quick access, synchronized locally via browser storage.
 - **Search History Tracker**: Logs search queries to provide tag-based links to recent profiles.
-- **Cache Management**: Provides administrative controls to manually purge specific user records and their repositories from the database.
+- **Theme-Consistent UI**: Spotify-inspired glassmorphic dark theme with custom styled dropdowns and responsive design.
+
+---
 
 ## Tech Stack
 
 ### Frontend
-- React 19
-- React Router 7
-- Vite
-- Axios
-- React Icons
-- Vanilla CSS with CSS Modules
+- **React 19**: SPA framework
+- **React Router 7**: Declarative routing
+- **Vite 8**: Frontend build tool & dev server (with dynamic code-splitting)
+- **Axios**: HTTP client with Bearer token interceptor
+- **jspdf & html2canvas**: High-resolution client-side PDF document generation
+- **React Icons**: SVG iconography
+- **Vanilla CSS / CSS Modules**: Scoped styles adhering to a dark glassmorphic design system
 
 ### Backend
-- Node.js (ES Modules)
-- Express
-- MongoDB (Mongoose ODM)
-- Axios
+- **Node.js (ES Modules)**: JavaScript runtime
+- **Express**: Web framework
+- **MongoDB & Mongoose**: ODM database layer
+- **jsonwebtoken & bcryptjs**: Password hashing and JWT session management
+- **Axios**: GitHub REST API client
 
-### Development Tooling
-- Concurrently
-- Oxlint Linter
-- Nodemon
+---
 
 ## Getting Started
 
@@ -75,10 +86,12 @@ Create a `.env` file in the `server` directory:
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/github-explorer
 GITHUB_API=https://api.github.com
-# GITHUB_TOKEN=your_optional_personal_access_token
+JWT_SECRET=your_jwt_secret_key
+# Optional GitHub OAuth App Credentials
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GITHUB_REDIRECT_URI=http://localhost:5173/auth/callback
 ```
-
-*Note: Providing a `GITHUB_TOKEN` is optional, but recommended to prevent rate limiting (GitHub limits unauthenticated requests to 60 per hour, while authenticated requests receive up to 5,000 per hour).*
 
 #### Frontend Configuration
 Create a `.env` file in the `frontend` directory:
@@ -89,43 +102,40 @@ VITE_API_URL=http://localhost:5000/api
 
 ### Installation and Running
 
-From the root directory of the project, follow these commands:
+From the root directory of the project, run:
 
-1. **Install dependencies for both frontend and backend**:
+1. **Install dependencies**:
    ```bash
    npm run install-all
    ```
 
-2. **Run both servers in development mode concurrently**:
+2. **Start frontend and backend concurrently**:
    ```bash
    npm run dev
    ```
 
-   This launches:
-   - The React frontend application at `http://localhost:5173`
-   - The Express backend server at `http://localhost:5000`
+   - React App: `http://localhost:5173`
+   - Backend API: `http://localhost:5000`
 
-### Individual Project Scripts
-
-If you wish to run the projects separately:
-
-- **Start backend server only**:
-  ```bash
-  npm run server
-  ```
-- **Start frontend server only**:
-  ```bash
-  npm run frontend
-  ```
+---
 
 ## API Reference
 
-The backend API is exposed under the `/api` prefix.
+### Authentication Endpoints (`/api/auth`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `POST` | `/api/auth/register` | Register a new user account with Name, Email, and Password. |
+| `POST` | `/api/auth/login` | Authenticate user with Email and Password, returning a JWT token. |
+| `GET` | `/api/auth/github/url` | Resolves GitHub OAuth authorization redirect URL. |
+| `POST` | `/api/auth/github/callback` | Exchanges GitHub authorization code or username for JWT session token. |
+| `GET` | `/api/auth/me` | Fetches currently authenticated user details (Protected). |
+| `POST` | `/api/auth/link-github` | Links a GitHub handle to the logged-in user profile (Protected). |
 
+### GitHub & Analytics Endpoints (`/api`)
 | Method | Endpoint | Description |
 |:---|:---|:---|
 | `GET` | `/api/github/:username` | Resolves a profile, checking the MongoDB cache first. |
 | `POST` | `/api/github/refresh/:username` | Forces a fresh synchronization from GitHub, bypassing cache checks. |
-| `GET` | `/api/users` | Lists all cached user profiles stored in the database. |
-| `GET` | `/api/history` | Lists recently searched usernames (limited to the last 12 unique entries). |
-| `DELETE` | `/api/users/:id` | Purges a specific cached user, their repository index, and search logs. |
+| `GET` | `/api/users` | Lists cached user profiles stored in the database. |
+| `GET` | `/api/history` | Lists recently searched usernames (limited to the last 12 entries). |
+| `DELETE` | `/api/users/:id` | Purges a specific cached user and search logs. |

@@ -185,6 +185,7 @@ export const githubCallback = async (req, res, next) => {
         client_id: clientId,
         client_secret: clientSecret,
         code,
+        redirect_uri: process.env.GITHUB_REDIRECT_URI || 'http://localhost:5173/auth/callback',
       },
       {
         headers: { Accept: 'application/json' },

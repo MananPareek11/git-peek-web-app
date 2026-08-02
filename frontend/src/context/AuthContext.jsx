@@ -15,6 +15,8 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('gitpeek_token') || null);
   const [loading, setLoading] = useState(true);
 
   // Sync bookmarks to local storage whenever they change

@@ -112,16 +112,21 @@ export const Home = () => {
             <p className={styles.emptyText}>No developers favorited yet. Bookmark profiles from their detail screen to see them here.</p>
           ) : (
             <div className={styles.favoritesList}>
-              {favorites.map((fav) => (
-                <div 
-                  key={fav.username} 
-                  onClick={() => handleQuickSearch(fav.username)}
-                  className={styles.favItem}
-                >
-                  <img src={fav.avatar} alt={fav.username} className={styles.favAvatar} />
-                  <span className={styles.favUsername}>@{fav.username}</span>
-                </div>
-              ))}
+              {favorites.map((fav, idx) => {
+                const username = typeof fav === 'string' ? fav : fav?.username;
+                const avatar = typeof fav === 'string' ? `https://github.com/${fav}.png` : fav?.avatar;
+                if (!username) return null;
+                return (
+                  <div 
+                    key={username || idx} 
+                    onClick={() => handleQuickSearch(username)}
+                    className={styles.favItem}
+                  >
+                    <img src={avatar} alt={username} className={styles.favAvatar} />
+                    <span className={styles.favUsername}>@{username}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Card>

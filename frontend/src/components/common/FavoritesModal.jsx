@@ -31,35 +31,42 @@ export const FavoritesModal = ({ isOpen, onClose }) => {
         {/* Favorites List Content */}
         <div className={styles.listContent}>
           {favorites.length > 0 ? (
-            favorites.map((item) => (
-              <div key={item.username} className={styles.itemCard}>
-                <div className={styles.itemLeft}>
-                  {item.avatar ? (
-                    <img src={item.avatar} alt={item.username} className={styles.itemAvatar} />
-                  ) : (
-                    <FaUser style={{ fontSize: '1.5rem', color: '#ef4444' }} />
-                  )}
-                  <div className={styles.itemInfo}>
-                    <h4 className={styles.itemTitle}>
-                      <Link to={`/profile/${item.username}`} onClick={onClose} className={styles.itemLink}>
-                        @{item.username}
-                      </Link>
-                    </h4>
-                    <p className={styles.itemDesc}>{item.name || `Developer Profile`}</p>
-                  </div>
-                </div>
+            favorites.map((item, idx) => {
+              const username = typeof item === 'string' ? item : item?.username;
+              const avatar = typeof item === 'string' ? `https://github.com/${item}.png` : item?.avatar;
+              const name = typeof item === 'string' ? item : item?.name;
+              if (!username) return null;
 
-                {/* Explicit Remove / Delete Button */}
-                <button
-                  className={styles.deleteBtn}
-                  onClick={(e) => handleDelete(item.username, e)}
-                  title="Remove from favorites"
-                >
-                  <FaTrash />
-                  <span>Remove</span>
-                </button>
-              </div>
-            ))
+              return (
+                <div key={username || idx} className={styles.itemCard}>
+                  <div className={styles.itemLeft}>
+                    {avatar ? (
+                      <img src={avatar} alt={username} className={styles.itemAvatar} />
+                    ) : (
+                      <FaUser style={{ fontSize: '1.5rem', color: '#ef4444' }} />
+                    )}
+                    <div className={styles.itemInfo}>
+                      <h4 className={styles.itemTitle}>
+                        <Link to={`/profile/${username}`} onClick={onClose} className={styles.itemLink}>
+                          @{username}
+                        </Link>
+                      </h4>
+                      <p className={styles.itemDesc}>{name || `Developer Profile`}</p>
+                    </div>
+                  </div>
+
+                  {/* Explicit Remove / Delete Button */}
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={(e) => handleDelete(username, e)}
+                    title="Remove from favorites"
+                  >
+                    <FaTrash />
+                    <span>Remove</span>
+                  </button>
+                </div>
+              );
+            })
           ) : (
             <div className={styles.emptyState}>
               <FaHeart className={styles.emptyIcon} />

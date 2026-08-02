@@ -6,9 +6,15 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [bookmarks, setBookmarks] = useState(() => {
-    const saved = localStorage.getItem('gitpeek_bookmarks');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('gitpeek_bookmarks');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch (e) {
+      return [];
+    }
   });
+
   const [loading, setLoading] = useState(true);
 
   // Sync bookmarks to local storage whenever they change

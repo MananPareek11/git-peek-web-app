@@ -9,9 +9,25 @@ export const SearchProvider = ({ children }) => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [cachedUsers, setCachedUsers] = useState([]);
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('favorite_users');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('favorite_users');
+      const parsed = saved ? JSON.parse(saved) : [];
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(Boolean)
+          .map((item) => {
+            if (typeof item === 'string') {
+              return { username: item.toLowerCase(), avatar: `https://github.com/${item}.png`, name: item };
+            }
+            return item;
+          });
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
   });
+
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingCached, setLoadingCached] = useState(false);
 
@@ -60,7 +76,12 @@ export const SearchProvider = ({ children }) => {
   const isFavorite = useCallback(
     (username) => {
       if (!username) return false;
-      return favorites.some((fav) => fav.username.toLowerCase() === username.toLowerCase());
+      const target = username.toLowerCase();
+      return favorites.some((fav) => {
+        if (!fav) return false;
+        const u = typeof fav === 'string' ? fav : fav.username;
+        return u && u.toLowerCase() === target;
+      });
     },
     [favorites]
   );
@@ -69,7 +90,13 @@ export const SearchProvider = ({ children }) => {
     async (username) => {
       if (!username) return;
       const nameLower = username.toLowerCase();
-      setFavorites((prev) => prev.filter((fav) => fav.username.toLowerCase() !== nameLower));
+      setFavorites((prev) =>
+        prev.filter((fav) => {
+          if (!fav) return false;
+          const u = typeof fav === 'string' ? fav : fav.username;
+          return u && u.toLowerCase() !== nameLower;
+        })
+      );
       if (token) {
         try {
           await deleteUserFavorite(nameLower);
@@ -90,7 +117,7 @@ export const SearchProvider = ({ children }) => {
       if (exists) {
         await removeFavorite(username);
       } else {
-        const newFav = { username, avatar: avatar || '', name: name || username };
+        const newFav = { username: nameLower, avatar: avatar || '', name: name || username };
         setFavorites((prev) => [newFav, ...prev]);
         if (token) {
           try {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AuthUser from '../models/AuthUser.js';
 import Bookmark from '../models/Bookmark.js';
+import Favorite from '../models/Favorite.js';
 import { generateToken } from '../middleware/authMiddleware.js';
 
 // @desc    Register a new user (Normal Login / Email)
@@ -372,27 +373,91 @@ export const addBookmark = async (req, res, next) => {
   }
 };
 
-// @desc    Delete Bookmark by targetId or _id for Logged In User
+// @desc    Delete Bookmark by targetId for Logged In User
 // @route   DELETE /api/auth/bookmarks/:targetId
 // @access  Private
 export const deleteBookmark = async (req, res, next) => {
   try {
     const { targetId } = req.params;
+    const decodedTarget = decodeURIComponent(targetId);
 
-    // Delete by targetId OR _id for flexibility
     const deleted = await Bookmark.findOneAndDelete({
       userId: req.user._id,
-      $or: [{ targetId: decodeURIComponent(targetId) }, { _id: mongoose.Types.ObjectId.isValid(targetId) ? targetId : null }],
+      targetId: decodedTarget,
     });
 
     if (!deleted) {
       return res.status(404).json({ message: 'Bookmark not found' });
     }
 
-    res.json({ message: 'Bookmark deleted successfully', targetId });
+    res.json({ message: 'Bookmark deleted successfully', targetId: decodedTarget });
   } catch (error) {
     next(error);
   }
 };
+
+// @desc    Get Favorites for Logged In User
+// @route   GET /api/auth/favorites
+// @access  Private
+export const getFavorites = async (req, res, next) => {
+  try {
+    const favorites = await Favorite.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json(favorites);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Add Favorite Profile for Logged In User
+// @route   POST /api/auth/favorites
+// @access  Private
+export const addFavorite = async (req, res, next) => {
+  try {
+    const { username, avatar, name } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
+    }
+
+    const favorite = await Favorite.findOneAndUpdate(
+      { userId: req.user._id, username: username.toLowerCase() },
+      {
+        userId: req.user._id,
+        username: username.toLowerCase(),
+        avatar: avatar || '',
+        name: name || username,
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(201).json(favorite);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete Favorite Profile for Logged In User
+// @route   DELETE /api/auth/favorites/:username
+// @access  Private
+export const deleteFavorite = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const decodedUsername = decodeURIComponent(username).toLowerCase();
+
+    const deleted = await Favorite.findOneAndDelete({
+      userId: req.user._id,
+      username: decodedUsername,
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Favorite not found' });
+    }
+
+    res.json({ message: 'Favorite deleted successfully', username: decodedUsername });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 

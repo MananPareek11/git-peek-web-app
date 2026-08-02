@@ -9,6 +9,9 @@ import {
   getBookmarks,
   addBookmark,
   deleteBookmark,
+  getFavorites,
+  addFavorite,
+  deleteFavorite,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -27,5 +30,11 @@ router.get('/bookmarks', protect, getBookmarks);
 router.post('/bookmarks', protect, addBookmark);
 router.delete('/bookmarks/:targetId', protect, deleteBookmark);
 
+// Protected Favorite Routes
+router.get('/favorites', protect, getFavorites);
+router.post('/favorites', protect, addFavorite);
+router.delete('/favorites/:username', protect, deleteFavorite);
+
 export default router;
+
 

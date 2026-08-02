@@ -79,4 +79,31 @@ export const deleteUserBookmark = async (targetId) => {
   return response.data;
 };
 
+/**
+ * Fetches all saved favorite profiles for the current authenticated user
+ */
+export const fetchUserFavorites = async () => {
+  const response = await axiosInstance.get('/auth/favorites');
+  return response.data;
+};
+
+/**
+ * Saves a new favorite profile to the user account
+ * @param {object} favoriteItem 
+ */
+export const createFavorite = async (favoriteItem) => {
+  const response = await axiosInstance.post('/auth/favorites', favoriteItem);
+  return response.data;
+};
+
+/**
+ * Removes a favorite profile from the user account by username
+ * @param {string} username 
+ */
+export const deleteUserFavorite = async (username) => {
+  const response = await axiosInstance.delete(`/auth/favorites/${encodeURIComponent(username)}`);
+  return response.data;
+};
+
+
 

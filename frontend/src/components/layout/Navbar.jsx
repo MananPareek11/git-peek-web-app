@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaGithub, FaInfoCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaUser, FaBookmark } from 'react-icons/fa';
+import { FaGithub, FaInfoCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaUser, FaBookmark, FaHeart } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { useSearch } from '../../context/SearchContext';
 import BookmarksModal from '../common/BookmarksModal';
+import FavoritesModal from '../common/FavoritesModal';
 import styles from './Navbar.module.css';
 import Container from './Container';
 
 export const Navbar = () => {
   const location = useLocation();
   const { user, isAuthenticated, bookmarks, logout } = useAuth();
+  const { favorites } = useSearch();
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -38,32 +42,58 @@ export const Navbar = () => {
               <span>About</span>
             </Link>
 
+            {/* Favorites Button (Always accessible) */}
+            <button
+              onClick={() => setIsFavoritesOpen(true)}
+              className={styles.navLink}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444' }}
+              title="View Favorite Developers"
+            >
+              <FaHeart />
+              <span>Favorites</span>
+              {favorites.length > 0 && (
+                <span
+                  style={{
+                    background: '#ef4444',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {favorites.length}
+                </span>
+              )}
+            </button>
+
+            {/* Bookmarks Button (Always accessible) */}
+            <button
+              onClick={() => setIsBookmarksOpen(true)}
+              className={styles.navLink}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#eab308' }}
+              title="View Saved Bookmarks"
+            >
+              <FaBookmark />
+              <span>Bookmarks</span>
+              {bookmarks.length > 0 && (
+                <span
+                  style={{
+                    background: '#eab308',
+                    color: '#0f172a',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {bookmarks.length}
+                </span>
+              )}
+            </button>
+
             {isAuthenticated && user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button
-                  onClick={() => setIsBookmarksOpen(true)}
-                  className={styles.navLink}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#eab308' }}
-                  title="View Saved Bookmarks"
-                >
-                  <FaBookmark />
-                  <span>Bookmarks</span>
-                  {bookmarks.length > 0 && (
-                    <span
-                      style={{
-                        background: '#eab308',
-                        color: '#0f172a',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      {bookmarks.length}
-                    </span>
-                  )}
-                </button>
-
                 <Link
                   to={user.githubUsername ? `/profile/${user.githubUsername}` : '/'}
                   className={styles.userBadge}
@@ -91,9 +121,11 @@ export const Navbar = () => {
       </header>
 
       <BookmarksModal isOpen={isBookmarksOpen} onClose={() => setIsBookmarksOpen(false)} />
+      <FavoritesModal isOpen={isFavoritesOpen} onClose={() => setIsFavoritesOpen(false)} />
     </>
   );
 };
 
 export default Navbar;
+
 

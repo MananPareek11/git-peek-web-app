@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getSearchHistory, getCachedUsers, deleteCachedUser } from '../services/githubApi';
+import { getSearchHistory, getCachedUsers, deleteCachedUser, fetchUserFavorites, createFavorite, deleteUserFavorite } from '../services/githubApi';
+import { useAuth } from './AuthContext';
 
 const SearchContext = createContext();
 
 export const SearchProvider = ({ children }) => {
+  const { user, token } = useAuth();
   const [recentSearches, setRecentSearches] = useState([]);
   const [cachedUsers, setCachedUsers] = useState([]);
   const [favorites, setFavorites] = useState(() => {
@@ -17,6 +19,19 @@ export const SearchProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('favorite_users', JSON.stringify(favorites));
   }, [favorites]);
+
+  // Sync favorites from MongoDB backend when user is logged in
+  useEffect(() => {
+    if (token && user) {
+      fetchUserFavorites()
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setFavorites(data);
+          }
+        })
+        .catch((err) => console.error('Failed to load server favorites:', err));
+    }
+  }, [token, user]);
 
   const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -42,22 +57,53 @@ export const SearchProvider = ({ children }) => {
     }
   }, []);
 
-  const toggleFavorite = useCallback((username, avatar) => {
-    const nameLower = username.toLowerCase();
-    setFavorites(prev => {
-      const exists = prev.find(fav => fav.username.toLowerCase() === nameLower);
-      if (exists) {
-        return prev.filter(fav => fav.username.toLowerCase() !== nameLower);
-      } else {
-        return [...prev, { username, avatar }];
-      }
-    });
-  }, []);
+  const isFavorite = useCallback(
+    (username) => {
+      if (!username) return false;
+      return favorites.some((fav) => fav.username.toLowerCase() === username.toLowerCase());
+    },
+    [favorites]
+  );
 
-  const isFavorite = useCallback((username) => {
-    if (!username) return false;
-    return favorites.some(fav => fav.username.toLowerCase() === username.toLowerCase());
-  }, [favorites]);
+  const removeFavorite = useCallback(
+    async (username) => {
+      if (!username) return;
+      const nameLower = username.toLowerCase();
+      setFavorites((prev) => prev.filter((fav) => fav.username.toLowerCase() !== nameLower));
+      if (token) {
+        try {
+          await deleteUserFavorite(nameLower);
+        } catch (err) {
+          console.error('Failed to delete favorite on server:', err);
+        }
+      }
+    },
+    [token]
+  );
+
+  const toggleFavorite = useCallback(
+    async (username, avatar, name) => {
+      if (!username) return;
+      const nameLower = username.toLowerCase();
+      const exists = isFavorite(username);
+
+      if (exists) {
+        await removeFavorite(username);
+      } else {
+        const newFav = { username, avatar: avatar || '', name: name || username };
+        setFavorites((prev) => [newFav, ...prev]);
+        if (token) {
+          try {
+            await createFavorite(newFav);
+          } catch (err) {
+            console.error('Failed to save favorite to server:', err);
+          }
+        }
+      }
+    },
+    [isFavorite, removeFavorite, token]
+  );
+
 
   const removeUserFromCache = useCallback(async (id, username) => {
     try {

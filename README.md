@@ -134,7 +134,10 @@ From the root directory of the project, run:
 | `POST` | `/api/auth/link-github` | Links a GitHub handle to the logged-in user profile (Protected). |
 | `GET` | `/api/auth/bookmarks` | Fetches saved bookmarks for the authenticated user (Protected). |
 | `POST` | `/api/auth/bookmarks` | Saves a new profile or repository bookmark to user account (Protected). |
-| `DELETE` | `/api/auth/bookmarks/:targetId` | Deletes a saved bookmark from user account by targetId or _id (Protected). |
+| `DELETE` | `/api/auth/bookmarks/:targetId` | Deletes a saved bookmark from user account by targetId (Protected). |
+| `GET` | `/api/auth/favorites` | Fetches saved favorite profiles for the authenticated user (Protected). |
+| `POST` | `/api/auth/favorites` | Saves a favorite profile to user account (Protected). |
+| `DELETE` | `/api/auth/favorites/:username` | Deletes a favorite profile from user account by username (Protected). |
 
 ### GitHub & Analytics Endpoints (`/api`)
 | Method | Endpoint | Description |

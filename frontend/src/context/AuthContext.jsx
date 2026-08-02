@@ -5,10 +5,16 @@ import { fetchUserBookmarks, createBookmark, deleteUserBookmark } from '../servi
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('gitpeek_token') || null);
-  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarks, setBookmarks] = useState(() => {
+    const saved = localStorage.getItem('gitpeek_bookmarks');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(true);
+
+  // Sync bookmarks to local storage whenever they change
+  useEffect(() => {
+    localStorage.setItem('gitpeek_bookmarks', JSON.stringify(bookmarks));
+  }, [bookmarks]);
 
   // Configure axios auth header whenever token changes
   useEffect(() => {
@@ -24,7 +30,6 @@ export const AuthProvider = ({ children }) => {
       delete axiosInstance.defaults.headers.common['Authorization'];
       localStorage.removeItem('gitpeek_token');
       setUser(null);
-      setBookmarks([]);
       setLoading(false);
     }
   }, [token, user]);
@@ -32,9 +37,11 @@ export const AuthProvider = ({ children }) => {
   const loadBookmarks = async () => {
     try {
       const data = await fetchUserBookmarks();
-      setBookmarks(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setBookmarks(data);
+      }
     } catch (err) {
-      console.error('Failed to load user bookmarks:', err);
+      console.error('Failed to load user bookmarks from server:', err);
     }
   };
 
@@ -45,7 +52,9 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data);
       // Load user bookmarks after fetching user
       const bmData = await fetchUserBookmarks();
-      setBookmarks(bmData);
+      if (Array.isArray(bmData) && bmData.length > 0) {
+        setBookmarks(bmData);
+      }
     } catch (err) {
       console.error('Failed to fetch user session:', err);
       logout();
@@ -111,47 +120,46 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
-    setBookmarks([]);
     localStorage.removeItem('gitpeek_token');
   };
 
-  // Bookmark Management Methods
+  // Bookmark Management Methods (Instant local update + MongoDB backend sync)
   const isBookmarked = (targetId) => {
+    if (!targetId) return false;
     return bookmarks.some((b) => b.targetId === targetId);
   };
 
   const toggleBookmark = async (item) => {
-    if (!user) {
-      alert('Please log in or connect an account to save bookmarks to your profile.');
-      return false;
-    }
-
+    if (!item || !item.targetId) return false;
     const existing = isBookmarked(item.targetId);
     if (existing) {
       return await removeBookmark(item.targetId);
     } else {
-      try {
-        const newBm = await createBookmark(item);
-        setBookmarks((prev) => [newBm, ...prev]);
-        return true;
-      } catch (err) {
-        console.error('Failed to save bookmark:', err);
-        return false;
+      setBookmarks((prev) => [item, ...prev]);
+      if (token) {
+        try {
+          await createBookmark(item);
+        } catch (err) {
+          console.error('Failed to sync bookmark to server:', err);
+        }
       }
+      return true;
     }
   };
 
   const removeBookmark = async (targetId) => {
-    if (!user) return false;
-    try {
-      await deleteUserBookmark(targetId);
-      setBookmarks((prev) => prev.filter((b) => b.targetId !== targetId));
-      return true;
-    } catch (err) {
-      console.error('Failed to delete bookmark:', err);
-      return false;
+    if (!targetId) return false;
+    setBookmarks((prev) => prev.filter((b) => b.targetId !== targetId));
+    if (token) {
+      try {
+        await deleteUserBookmark(targetId);
+      } catch (err) {
+        console.error('Failed to delete bookmark on server:', err);
+      }
     }
+    return true;
   };
+
 
   return (
     <AuthContext.Provider

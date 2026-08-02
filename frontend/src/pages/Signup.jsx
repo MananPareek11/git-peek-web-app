@@ -14,7 +14,10 @@ export const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useAuth();
+  const [githubUsernameInput, setGithubUsernameInput] = useState('');
+  const [showDirectGh, setShowDirectGh] = useState(false);
+
+  const { register, loginWithGithubDirect } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -36,17 +39,34 @@ export const Signup = () => {
   };
 
   const handleGithubOAuth = async () => {
+    setError('');
     try {
       const res = await axiosInstance.get('/auth/github/url');
       if (res.data.configured && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        navigate('/login');
+        setShowDirectGh(true);
       }
     } catch (err) {
-      navigate('/login');
+      setShowDirectGh(true);
     }
   };
+
+  const handleDirectGhLogin = async (e) => {
+    e.preventDefault();
+    if (!githubUsernameInput.trim()) return;
+    setError('');
+    setLoading(true);
+    try {
+      const user = await loginWithGithubDirect(githubUsernameInput.trim());
+      navigate(`/profile/${user.githubUsername}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not authenticate with that GitHub username.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <Container className={styles.authContainer}>
@@ -68,11 +88,40 @@ export const Signup = () => {
             type="button"
             className={styles.githubBtn}
             onClick={handleGithubOAuth}
+            disabled={loading}
           >
             <FaGithub style={{ fontSize: '1.2rem' }} />
             <span>Sign up with GitHub</span>
           </button>
+
+          {showDirectGh && (
+            <form onSubmit={handleDirectGhLogin} className={styles.directGhModal}>
+              <div className={styles.inputGroup} style={{ marginTop: '0.8rem' }}>
+                <label className={styles.label}>Enter GitHub Username to Instant Connect:</label>
+                <div className={styles.inputWrapper}>
+                  <FaGithub className={styles.inputIcon} />
+                  <input
+                    type="text"
+                    className={styles.input}
+                    placeholder="e.g. torvalds or octocat"
+                    value={githubUsernameInput}
+                    onChange={(e) => setGithubUsernameInput(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                style={{ marginTop: '0.75rem', background: '#334155' }}
+                disabled={loading}
+              >
+                {loading ? 'Connecting...' : 'Connect GitHub Account'}
+              </button>
+            </form>
+          )}
         </div>
+
 
         <div className={styles.divider}>
           <span>or register with email</span>

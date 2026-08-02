@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaStar, FaCodeBranch, FaExclamationCircle, FaExternalLinkAlt } from 'react-icons/fa';
 import { timeAgo } from '../../utils/formatDate';
 import Card from '../common/Card';
@@ -12,7 +13,12 @@ export const RepoCard = ({ repo }) => {
       <div className={styles.header}>
         <div className={styles.titleWrapper}>
           <h3 className={styles.title} title={repo.name}>
-            {repo.name}
+            <Link
+              to={`/repo/${repo.owner}/${repo.name}`}
+              style={{ color: 'inherit', textDecoration: 'none' }}
+            >
+              {repo.name}
+            </Link>
           </h3>
           <Badge variant="outline" size="sm" className={styles.visibilityBadge}>
             {repo.visibility}
@@ -68,3 +74,4 @@ export const RepoCard = ({ repo }) => {
 };
 
 export default RepoCard;
+

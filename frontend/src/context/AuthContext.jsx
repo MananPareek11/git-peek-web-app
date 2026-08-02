@@ -35,10 +35,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const applyToken = (newToken) => {
+    if (newToken) {
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      localStorage.setItem('gitpeek_token', newToken);
+    } else {
+      delete axiosInstance.defaults.headers.common['Authorization'];
+      localStorage.removeItem('gitpeek_token');
+    }
+    setToken(newToken);
+  };
+
   const login = async (email, password) => {
     const res = await axiosInstance.post('/auth/login', { email, password });
     const { token: newToken, ...userData } = res.data;
-    setToken(newToken);
+    applyToken(newToken);
     setUser(userData);
     return userData;
   };
@@ -51,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       githubUsername,
     });
     const { token: newToken, ...userData } = res.data;
-    setToken(newToken);
+    applyToken(newToken);
     setUser(userData);
     return userData;
   };
@@ -59,7 +70,7 @@ export const AuthProvider = ({ children }) => {
   const loginWithGithubDirect = async (githubUsername) => {
     const res = await axiosInstance.post('/auth/github/callback', { githubUsername });
     const { token: newToken, ...userData } = res.data;
-    setToken(newToken);
+    applyToken(newToken);
     setUser(userData);
     return userData;
   };
@@ -67,10 +78,11 @@ export const AuthProvider = ({ children }) => {
   const handleOAuthCallback = async (code) => {
     const res = await axiosInstance.post('/auth/github/callback', { code });
     const { token: newToken, ...userData } = res.data;
-    setToken(newToken);
+    applyToken(newToken);
     setUser(userData);
     return userData;
   };
+
 
   const linkGithubAccount = async (githubUsername) => {
     const res = await axiosInstance.post('/auth/link-github', { githubUsername });

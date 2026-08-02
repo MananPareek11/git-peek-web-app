@@ -42,3 +42,14 @@ export const deleteCachedUser = async (id) => {
   const response = await axiosInstance.delete(`/users/${id}`);
   return response.data;
 };
+
+/**
+ * Fetches repository details (metadata, README, languages, commits)
+ * @param {string} owner 
+ * @param {string} repo 
+ */
+export const getRepoDetails = async (owner, repo) => {
+  const response = await axiosInstance.get(`/github/repo/${owner}/${repo}`);
+  return response.data;
+};
+

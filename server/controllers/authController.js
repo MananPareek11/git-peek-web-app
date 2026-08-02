@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AuthUser from '../models/AuthUser.js';
+import Bookmark from '../models/Bookmark.js';
 import { generateToken } from '../middleware/authMiddleware.js';
 
 // @desc    Register a new user (Normal Login / Email)
@@ -324,4 +325,74 @@ export const linkGithub = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get Bookmarks for Logged In User
+// @route   GET /api/auth/bookmarks
+// @access  Private
+export const getBookmarks = async (req, res, next) => {
+  try {
+    const bookmarks = await Bookmark.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json(bookmarks);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Add Bookmark for Logged In User
+// @route   POST /api/auth/bookmarks
+// @access  Private
+export const addBookmark = async (req, res, next) => {
+  try {
+    const { type, targetId, title, avatar, url, description, language, stars } = req.body;
+
+    if (!type || !targetId || !title || !url) {
+      return res.status(400).json({ message: 'Please provide type, targetId, title, and url' });
+    }
+
+    // Upsert bookmark to prevent duplication
+    const bookmark = await Bookmark.findOneAndUpdate(
+      { userId: req.user._id, targetId },
+      {
+        userId: req.user._id,
+        type,
+        targetId,
+        title,
+        avatar: avatar || '',
+        url,
+        description: description || '',
+        language: language || '',
+        stars: stars || 0,
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(201).json(bookmark);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete Bookmark by targetId or _id for Logged In User
+// @route   DELETE /api/auth/bookmarks/:targetId
+// @access  Private
+export const deleteBookmark = async (req, res, next) => {
+  try {
+    const { targetId } = req.params;
+
+    // Delete by targetId OR _id for flexibility
+    const deleted = await Bookmark.findOneAndDelete({
+      userId: req.user._id,
+      $or: [{ targetId: decodeURIComponent(targetId) }, { _id: mongoose.Types.ObjectId.isValid(targetId) ? targetId : null }],
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Bookmark not found' });
+    }
+
+    res.json({ message: 'Bookmark deleted successfully', targetId });
+  } catch (error) {
+    next(error);
+  }
+};
+
 

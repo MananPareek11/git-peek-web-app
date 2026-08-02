@@ -87,6 +87,47 @@ Links a GitHub username to the logged-in user account.
 
 ---
 
+### Get User Bookmarks
+Retrieves all saved profile and repository bookmarks for the authenticated user.
+
+**Endpoint:** `/api/auth/bookmarks`  
+**Method:** `GET`  
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### Create Bookmark
+Saves a new profile or repository bookmark for the authenticated user.
+
+**Endpoint:** `/api/auth/bookmarks`  
+**Method:** `POST`  
+**Headers:** `Authorization: Bearer <token>`  
+**Body:**
+```json
+{
+  "type": "repository",
+  "targetId": "torvalds/linux",
+  "title": "torvalds/linux",
+  "avatar": "https://github.com/torvalds.png",
+  "url": "/repo/torvalds/linux",
+  "description": "Linux kernel source tree",
+  "language": "C",
+  "stars": 185000
+}
+```
+
+---
+
+### Delete Bookmark
+Deletes a saved bookmark from the user's account by targetId or _id.
+
+**Endpoint:** `/api/auth/bookmarks/:targetId`  
+**Method:** `DELETE`  
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+
 ## 2. GitHub Profile & Repositories (`/api`)
 
 ### Get User Profile & Repositories

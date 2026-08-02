@@ -16,6 +16,8 @@ import {
   FaDatabase,
   FaUpload,
   FaUser,
+  FaBookmark,
+  FaRegBookmark,
 } from 'react-icons/fa';
 import Container from '../components/layout/Container';
 import Button from '../components/common/Button';
@@ -24,6 +26,7 @@ import LanguageBadge from '../components/repository/LanguageBadge';
 import MarkdownViewer from '../components/repository/MarkdownViewer';
 import ErrorState from '../components/common/ErrorState';
 import { getRepoDetails } from '../services/githubApi';
+import { useAuth } from '../context/AuthContext';
 import { timeAgo, formatDate } from '../utils/formatDate';
 import styles from './RepoDetail.module.css';
 
@@ -53,6 +56,24 @@ export const RepoDetail = () => {
   const [repoData, setRepoData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isBookmarked, toggleBookmark } = useAuth();
+
+  const targetId = `${owner}/${repo}`;
+  const bookmarked = isBookmarked(targetId);
+
+  const handleBookmarkToggle = () => {
+    if (!repoData) return;
+    toggleBookmark({
+      type: 'repository',
+      targetId,
+      title: `${owner}/${repo}`,
+      avatar: repoData.ownerAvatar || '',
+      url: `/repo/${owner}/${repo}`,
+      description: repoData.description || 'GitHub Repository',
+      language: repoData.language || '',
+      stars: repoData.stars || 0,
+    });
+  };
 
   const fetchRepo = async () => {
     try {
@@ -165,16 +186,39 @@ export const RepoDetail = () => {
             </div>
           </div>
 
-          <a
-            href={repoData.repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.openGithubBtn}
-          >
-            <FaExternalLinkAlt />
-            <span>Open on GitHub</span>
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={handleBookmarkToggle}
+              style={{
+                background: bookmarked ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${bookmarked ? 'rgba(234, 179, 8, 0.4)' : 'rgba(255, 255, 255, 0.15)'}`,
+                color: bookmarked ? '#eab308' : '#e2e8f0',
+                padding: '0.6rem 1.1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+              title={bookmarked ? 'Remove bookmark' : 'Bookmark repository'}
+            >
+              {bookmarked ? <FaBookmark /> : <FaRegBookmark />}
+              <span>{bookmarked ? 'Bookmarked' : 'Bookmark Repo'}</span>
+            </button>
+            <a
+              href={repoData.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.openGithubBtn}
+            >
+              <FaExternalLinkAlt />
+              <span>Open on GitHub</span>
+            </a>
+          </div>
         </div>
+
 
         <p className={styles.description}>
           {repoData.description || 'No description provided for this repository.'}

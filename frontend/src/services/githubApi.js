@@ -53,3 +53,30 @@ export const getRepoDetails = async (owner, repo) => {
   return response.data;
 };
 
+/**
+ * Fetches all saved bookmarks for the current authenticated user
+ */
+export const fetchUserBookmarks = async () => {
+  const response = await axiosInstance.get('/auth/bookmarks');
+  return response.data;
+};
+
+/**
+ * Saves a new bookmark to the user account
+ * @param {object} bookmarkItem 
+ */
+export const createBookmark = async (bookmarkItem) => {
+  const response = await axiosInstance.post('/auth/bookmarks', bookmarkItem);
+  return response.data;
+};
+
+/**
+ * Removes a bookmark from the user account by targetId
+ * @param {string} targetId 
+ */
+export const deleteUserBookmark = async (targetId) => {
+  const response = await axiosInstance.delete(`/auth/bookmarks/${encodeURIComponent(targetId)}`);
+  return response.data;
+};
+
+

@@ -8,9 +8,12 @@ import {
   FaCalendarAlt, 
   FaSync, 
   FaHeart, 
-  FaRegHeart 
+  FaRegHeart,
+  FaBookmark,
+  FaRegBookmark
 } from 'react-icons/fa';
 import { useSearch } from '../../context/SearchContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatDate } from '../../utils/formatDate';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
@@ -19,7 +22,21 @@ import styles from './ProfileCard.module.css';
 
 export const ProfileCard = ({ user, onRefresh, refreshing, source }) => {
   const { toggleFavorite, isFavorite } = useSearch();
+  const { isBookmarked, toggleBookmark } = useAuth();
+
   const favState = isFavorite(user.username);
+  const bookmarked = isBookmarked(user.username);
+
+  const handleBookmarkToggle = () => {
+    toggleBookmark({
+      type: 'profile',
+      targetId: user.username,
+      title: user.name || user.username,
+      avatar: user.avatar,
+      url: `/profile/${user.username}`,
+      description: user.bio || `Developer profile @${user.username}`,
+    });
+  };
 
   const getSourceLabel = () => {
     if (source === 'cache') return 'Cached (DB)';
@@ -49,15 +66,26 @@ export const ProfileCard = ({ user, onRefresh, refreshing, source }) => {
         <div className={styles.meta}>
           <div className={styles.nameRow}>
             <h2 className={styles.name}>{user.name || user.username}</h2>
-            <button
-              onClick={() => toggleFavorite(user.username, user.avatar)}
-              className={styles.favBtn}
-              title={favState ? 'Remove from favorites' : 'Add to favorites'}
-              aria-label={favState ? 'Remove from favorites' : 'Add to favorites'}
-            >
-              {favState ? <FaHeart className={styles.heartFilled} /> : <FaRegHeart className={styles.heartOutline} />}
-            </button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                onClick={handleBookmarkToggle}
+                className={styles.favBtn}
+                title={bookmarked ? 'Remove bookmark' : 'Save bookmark'}
+                style={{ color: bookmarked ? '#eab308' : '#94a3b8' }}
+              >
+                {bookmarked ? <FaBookmark /> : <FaRegBookmark />}
+              </button>
+              <button
+                onClick={() => toggleFavorite(user.username, user.avatar)}
+                className={styles.favBtn}
+                title={favState ? 'Remove from favorites' : 'Add to favorites'}
+                aria-label={favState ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                {favState ? <FaHeart className={styles.heartFilled} /> : <FaRegHeart className={styles.heartOutline} />}
+              </button>
+            </div>
           </div>
+
           <a 
             href={user.profileUrl} 
             target="_blank" 

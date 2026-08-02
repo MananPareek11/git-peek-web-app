@@ -41,6 +41,7 @@ sequenceDiagram
 
 ## Key Features
 
+- **User-Connected Bookmarks & Deletion**: Logged-in users can bookmark profiles and repositories directly to their MongoDB user account. Features an interactive **Bookmarks Drawer** with filter tabs and explicit **Remove / Delete** buttons for each saved bookmark.
 - **Dynamic Repository Detail View & README Viewer**: Interactive `/repo/:owner/:repo` page with full repo metrics (stars, forks, open issues, watchers, size in MB, license, default branch), language distribution progress bars, recent commit activity, and structured `README.md` renderer.
 - **GitHub OAuth & Email/Password Authentication**: Secure authentication system supporting normal register/login via Email and Password (hashed with `bcryptjs` and secured with JWT tokens) as well as GitHub OAuth / instant GitHub profile linking.
 - **Developer PDF Resume Exporter**: Export high-resolution, formatted PDF summary reports for any developer profile, detailing bio metrics, repository counts, total stars/forks, programming language distribution progress bars, and top featured projects.
@@ -131,6 +132,9 @@ From the root directory of the project, run:
 | `POST` | `/api/auth/github/callback` | Exchanges GitHub authorization code or username for JWT session token. |
 | `GET` | `/api/auth/me` | Fetches currently authenticated user details (Protected). |
 | `POST` | `/api/auth/link-github` | Links a GitHub handle to the logged-in user profile (Protected). |
+| `GET` | `/api/auth/bookmarks` | Fetches saved bookmarks for the authenticated user (Protected). |
+| `POST` | `/api/auth/bookmarks` | Saves a new profile or repository bookmark to user account (Protected). |
+| `DELETE` | `/api/auth/bookmarks/:targetId` | Deletes a saved bookmark from user account by targetId or _id (Protected). |
 
 ### GitHub & Analytics Endpoints (`/api`)
 | Method | Endpoint | Description |
@@ -141,4 +145,5 @@ From the root directory of the project, run:
 | `GET` | `/api/users` | Lists cached user profiles stored in the database. |
 | `GET` | `/api/history` | Lists recently searched usernames (limited to the last 12 entries). |
 | `DELETE` | `/api/users/:id` | Purges a specific cached user and search logs. |
+
 

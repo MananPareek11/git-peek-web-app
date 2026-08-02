@@ -51,3 +51,76 @@ export const fetchReposFromGithub = async (username) => {
     throw error;
   }
 };
+
+/**
+ * Fetches repository metadata from GitHub API
+ * @param {string} owner 
+ * @param {string} repo 
+ */
+export const fetchRepoDetailsFromGithub = async (owner, repo) => {
+  const response = await axios.get(`${GITHUB_API_URL}/repos/${owner}/${repo}`, {
+    headers: getHeaders(),
+  });
+  return response.data;
+};
+
+/**
+ * Fetches README content for a repository
+ * @param {string} owner 
+ * @param {string} repo 
+ */
+export const fetchRepoReadme = async (owner, repo) => {
+  try {
+    const response = await axios.get(`${GITHUB_API_URL}/repos/${owner}/${repo}/readme`, {
+      headers: getHeaders(),
+    });
+    if (response.data && response.data.content) {
+      const decoded = Buffer.from(response.data.content, 'base64').toString('utf-8');
+      return decoded;
+    }
+    return '';
+  } catch (error) {
+    return '';
+  }
+};
+
+/**
+ * Fetches language distribution bytes for a repository
+ * @param {string} owner 
+ * @param {string} repo 
+ */
+export const fetchRepoLanguages = async (owner, repo) => {
+  try {
+    const response = await axios.get(`${GITHUB_API_URL}/repos/${owner}/${repo}/languages`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    return {};
+  }
+};
+
+/**
+ * Fetches recent commit history for a repository
+ * @param {string} owner 
+ * @param {string} repo 
+ */
+export const fetchRepoCommits = async (owner, repo) => {
+  try {
+    const response = await axios.get(`${GITHUB_API_URL}/repos/${owner}/${repo}/commits`, {
+      headers: getHeaders(),
+      params: { per_page: 10 },
+    });
+    return response.data.map((c) => ({
+      sha: c.sha,
+      message: c.commit.message,
+      author: c.commit.author.name,
+      avatar: c.author ? c.author.avatar_url : '',
+      date: c.commit.author.date,
+      url: c.html_url,
+    }));
+  } catch (error) {
+    return [];
+  }
+};
+

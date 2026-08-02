@@ -5,9 +5,13 @@ import {
   getCachedUsers,
   getSearchHistory,
   deleteCachedUser,
+  getRepoDetails,
 } from '../controllers/githubController.js';
 
 const router = express.Router();
+
+// Route: Get repository details (metadata, README, languages, commits)
+router.get('/github/repo/:owner/:repo', getRepoDetails);
 
 // Route: Get profile details (cached or from Github)
 router.get('/github/:username', searchUser);
@@ -25,3 +29,4 @@ router.get('/history', getSearchHistory);
 router.delete('/users/:id', deleteCachedUser);
 
 export default router;
+

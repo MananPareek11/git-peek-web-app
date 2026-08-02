@@ -97,6 +97,14 @@ Fetches a user profile and public repositories from MongoDB cache (if fresh) or 
 
 ---
 
+### Get Repository Details
+Fetches full metadata, formatted README markdown content, language breakdown, and recent commit history for a specific repository.
+
+**Endpoint:** `/api/github/repo/:owner/:repo`  
+**Method:** `GET`
+
+---
+
 ### Force Refresh Profile
 Purges cached data and fetches live profile & repository data from GitHub.
 
@@ -118,3 +126,4 @@ Lists recent search queries.
 
 **Endpoint:** `/api/history`  
 **Method:** `GET`
+

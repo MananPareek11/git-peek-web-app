@@ -13,7 +13,9 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       localStorage.setItem('gitpeek_token', token);
-      fetchCurrentUser();
+      if (!user) {
+        fetchCurrentUser();
+      }
     } else {
       delete axiosInstance.defaults.headers.common['Authorization'];
       localStorage.removeItem('gitpeek_token');
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   }, [token]);
+
 
   const fetchCurrentUser = async () => {
     try {

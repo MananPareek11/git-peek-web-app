@@ -41,6 +41,7 @@ sequenceDiagram
 
 ## Key Features
 
+- **Dynamic Repository Detail View & README Viewer**: Interactive `/repo/:owner/:repo` page with full repo metrics (stars, forks, open issues, watchers, size in MB, license, default branch), language distribution progress bars, recent commit activity, and structured `README.md` renderer.
 - **GitHub OAuth & Email/Password Authentication**: Secure authentication system supporting normal register/login via Email and Password (hashed with `bcryptjs` and secured with JWT tokens) as well as GitHub OAuth / instant GitHub profile linking.
 - **Developer PDF Resume Exporter**: Export high-resolution, formatted PDF summary reports for any developer profile, detailing bio metrics, repository counts, total stars/forks, programming language distribution progress bars, and top featured projects.
 - **Profile Search and Analytics**: Fetches comprehensive developer metadata, including biography, hireable flag, avatars, join dates, and follower metrics.
@@ -135,7 +136,9 @@ From the root directory of the project, run:
 | Method | Endpoint | Description |
 |:---|:---|:---|
 | `GET` | `/api/github/:username` | Resolves a profile, checking the MongoDB cache first. |
+| `GET` | `/api/github/repo/:owner/:repo` | Fetches detailed repository metadata, formatted README.md, language breakdown, and commit history. |
 | `POST` | `/api/github/refresh/:username` | Forces a fresh synchronization from GitHub, bypassing cache checks. |
 | `GET` | `/api/users` | Lists cached user profiles stored in the database. |
 | `GET` | `/api/history` | Lists recently searched usernames (limited to the last 12 entries). |
 | `DELETE` | `/api/users/:id` | Purges a specific cached user and search logs. |
+

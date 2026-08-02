@@ -124,7 +124,12 @@ export const githubCallback = async (req, res, next) => {
         });
 
         const ghUser = ghRes.data;
-        let user = await AuthUser.findOne({ githubId: String(ghUser.id) });
+        let user = await AuthUser.findOne({
+          $or: [
+            { githubId: String(ghUser.id) },
+            { githubUsername: new RegExp(`^${ghUser.login}$`, 'i') },
+          ],
+        });
 
         if (!user) {
           user = await AuthUser.create({
@@ -135,6 +140,8 @@ export const githubCallback = async (req, res, next) => {
             authProvider: 'github',
           });
         } else {
+          user.githubId = String(ghUser.id);
+          user.githubUsername = ghUser.login;
           user.name = ghUser.name || user.name;
           user.avatar = ghUser.avatar_url;
           await user.save();
@@ -197,22 +204,58 @@ export const githubCallback = async (req, res, next) => {
 
     const ghUser = userResponse.data;
 
-    // 3. Find or Create AuthUser
-    let user = await AuthUser.findOne({ githubId: String(ghUser.id) });
+    // Fetch email if private/missing from base user profile
+    let primaryEmail = ghUser.email;
+    if (!primaryEmail) {
+      try {
+        const emailsResponse = await axios.get('https://api.github.com/user/emails', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'User-Agent': 'GitPeek-App',
+          },
+        });
+        if (Array.isArray(emailsResponse.data)) {
+          const primaryObj = emailsResponse.data.find((e) => e.primary && e.verified) || emailsResponse.data[0];
+          if (primaryObj && primaryObj.email) {
+            primaryEmail = primaryObj.email;
+          }
+        }
+      } catch (e) {
+        // Email fetch failed, proceed with profile data
+      }
+    }
+
+    // 3. Find or Create AuthUser (Search by githubId, githubUsername, or email)
+    const searchConditions = [
+      { githubId: String(ghUser.id) },
+      { githubUsername: new RegExp(`^${ghUser.login}$`, 'i') },
+    ];
+    if (primaryEmail) {
+      searchConditions.push({ email: primaryEmail.toLowerCase() });
+    }
+
+    let user = await AuthUser.findOne({ $or: searchConditions });
 
     if (!user) {
-      user = await AuthUser.create({
+      const userDataToCreate = {
         name: ghUser.name || ghUser.login,
         githubId: String(ghUser.id),
         githubUsername: ghUser.login,
-        email: ghUser.email ? ghUser.email.toLowerCase() : undefined,
         avatar: ghUser.avatar_url,
         authProvider: 'github',
-      });
+      };
+      if (primaryEmail) {
+        userDataToCreate.email = primaryEmail.toLowerCase();
+      }
+
+      user = await AuthUser.create(userDataToCreate);
     } else {
+      user.githubId = String(ghUser.id);
       user.githubUsername = ghUser.login;
       user.avatar = ghUser.avatar_url;
       if (ghUser.name) user.name = ghUser.name;
+      if (primaryEmail && !user.email) user.email = primaryEmail.toLowerCase();
+      if (user.authProvider === 'local') user.authProvider = 'both';
       await user.save();
     }
 
@@ -260,6 +303,7 @@ export const linkGithub = async (req, res, next) => {
 
     const user = await AuthUser.findById(req.user._id);
     user.githubUsername = ghRes.data.login;
+    user.githubId = String(ghRes.data.id);
     if (!user.avatar) user.avatar = ghRes.data.avatar_url;
     if (user.authProvider === 'local') user.authProvider = 'both';
 
@@ -280,3 +324,4 @@ export const linkGithub = async (req, res, next) => {
     next(error);
   }
 };
+

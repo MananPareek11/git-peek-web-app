@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Container from '../components/layout/Container';
@@ -8,6 +8,7 @@ export const AuthCallback = () => {
   const [error, setError] = useState('');
   const { handleOAuthCallback } = useAuth();
   const navigate = useNavigate();
+  const processedRef = useRef(false);
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -16,13 +17,16 @@ export const AuthCallback = () => {
       return;
     }
 
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const processAuth = async () => {
       try {
         const user = await handleOAuthCallback(code);
-        if (user.githubUsername) {
-          navigate(`/profile/${user.githubUsername}`);
+        if (user && user.githubUsername) {
+          navigate(`/profile/${user.githubUsername}`, { replace: true });
         } else {
-          navigate('/');
+          navigate('/', { replace: true });
         }
       } catch (err) {
         console.error('GitHub Auth Callback Error:', err);
@@ -68,3 +72,4 @@ export const AuthCallback = () => {
 };
 
 export default AuthCallback;
+

@@ -14,7 +14,6 @@ const searchHistorySchema = new mongoose.Schema(
     },
     searchedBy: {
       type: String,
-      default: 'guest',
     },
   },
   {

@@ -1,7 +1,14 @@
 import User from '../models/User.js';
 import Repository from '../models/Repository.js';
 import SearchHistory from '../models/SearchHistory.js';
-import { fetchUserFromGithub, fetchReposFromGithub } from '../services/githubService.js';
+import {
+  fetchUserFromGithub,
+  fetchReposFromGithub,
+  fetchRepoDetailsFromGithub,
+  fetchRepoReadme,
+  fetchRepoLanguages,
+  fetchRepoCommits,
+} from '../services/githubService.js';
 
 // Cache expiration: 24 hours in milliseconds
 const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000;
@@ -215,3 +222,56 @@ export const deleteCachedUser = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Get Repository Details - fetches full repository details, README, languages, and commit activity
+ */
+export const getRepoDetails = async (req, res, next) => {
+  const { owner, repo } = req.params;
+
+  if (!owner || !repo) {
+    return res.status(400).json({ message: 'Owner and repository parameters are required' });
+  }
+
+  try {
+    const [details, readme, languages, commits] = await Promise.all([
+      fetchRepoDetailsFromGithub(owner, repo),
+      fetchRepoReadme(owner, repo),
+      fetchRepoLanguages(owner, repo),
+      fetchRepoCommits(owner, repo),
+    ]);
+
+    const formattedRepo = {
+      githubRepoId: details.id,
+      name: details.name,
+      owner: details.owner.login,
+      ownerAvatar: details.owner.avatar_url,
+      description: details.description || '',
+      stars: details.stargazers_count || 0,
+      forks: details.forks_count || 0,
+      subscribers: details.subscribers_count || 0,
+      openIssues: details.open_issues_count || 0,
+      license: details.license ? details.license.name : 'No License Specified',
+      language: details.language || 'Unknown',
+      visibility: details.visibility || (details.private ? 'private' : 'public'),
+      defaultBranch: details.default_branch || 'main',
+      createdAt: details.created_at,
+      updatedAt: details.updated_at,
+      pushedAt: details.pushed_at,
+      repoUrl: details.html_url,
+      topics: details.topics || [],
+      sizeKb: details.size || 0,
+      readme,
+      languages,
+      commits,
+    };
+
+    return res.status(200).json(formattedRepo);
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return res.status(404).json({ message: `Repository '${owner}/${repo}' not found on GitHub` });
+    }
+    next(error);
+  }
+};
+
